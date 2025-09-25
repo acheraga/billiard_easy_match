@@ -53,4 +53,4 @@ It provides a modern, responsive interface for managing two-player billiard matc
 
 ## Author
 
-Abdelhamid (location: `/home/abdelhamid/Documents/billard/test2.html`)
+Abdel
