@@ -1,4 +1,4 @@
-# Billard Game Manager (`test2.html`)
+# Billard Game Manager (`ASSIST WITH IA CLAUD AI and COPILOT`)
 
 ## Overview
 
