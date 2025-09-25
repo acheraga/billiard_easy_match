@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de Parties de Billard</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f4c0f 0%, #1a6b1a 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .match-info {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .match-score {
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .player-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .player-card.active {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
+            border: 3px solid #ffd700;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .player-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1a6b1a;
+        }
+
+        .player-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .player-status.active {
+            background: #4caf50;
+            color: white;
+        }
+
+        .player-status.waiting {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .timer-display {
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: #f5f5f5;
+            transition: all 0.3s ease;
+        }
+
+        .timer-display.warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .timer-display.danger {
+            background: #f44336;
+            color: white;
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .score-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .score-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .score-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .score-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .btn-score {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-score.plus {
+            background: #4caf50;
+        }
+
+        .btn-score.plus:hover:not(:disabled) {
+            background: #45a049;
+            transform: scale(1.1);
+        }
+
+        .btn-score.minus {
+            background: #f44336;
+        }
+
+        .btn-score.minus:hover:not(:disabled) {
+            background: #da190b;
+            transform: scale(1.1);
+        }
+
+        .btn-score:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .extension-section {
+            margin: 20px 0;
+        }
+
+        .extension-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .extension-btn:hover:not(:disabled) {
+            background: #1976d2;
+            transform: translateY(-2px);
+        }
+
+        .extension-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .extension-used {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .controls-center {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .break-message {
+            text-align: center;
+            padding: 15px;
+            background: #ffd700;
+            color: #333;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+        }
+
+        .break-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #f57c00;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-info {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-info:hover:not(:disabled) {
+            background: #1976d2;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-stop {
+            background: #9c27b0;
+            color: white;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: #7b1fa2;
+            transform: translateY(-2px);
+        }
+
+        .config-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .config-section h2 {
+            color: #1a6b1a;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-item label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .config-item input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .config-item input:focus {
+            outline: none;
+            border-color: #4caf50;
+        }
+
+        .game-status {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .double-time-indicator {
+            background: #ff5722;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-left: 10px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>🎱 Gestionnaire de Parties de Billard 🎱</h1>
+            <div class="match-info">
+                <div class="match-score">
+                    Match: {{ player1.matchScore }} - {{ player2.matchScore }}
+                </div>
+                <div class="match-score">
+                    Partie #{{ currentGame }}
+                </div>
+                <div class="game-status" v-if="gameStatus">
+                    {{ gameStatus }}
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h2>⚙️ Configuration</h2>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Temps par coup (secondes)</label>
+                    <input type="number" v-model.number="timePerShot" min="10" :disabled="isTimerRunning">
+                </div>
+                <div class="config-item">
+                    <label>Temps d'extension (secondes)</label>
+                    <input type="number" v-model.number="extensionTime" min="5" :disabled="isTimerRunning">
+                </div>
+                <div class="config-item">
+                    <label>Joueur 1</label>
+                    <input type="text" v-model="player1.name" :disabled="isTimerRunning">
+                </div>
+                <div class="config-item">
+                    <label>Joueur 2</label>
+                    <input type="text" v-model="player2.name" :disabled="isTimerRunning">
+                </div>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <div class="player-card" :class="{ active: currentPlayer === 1 }">
+                <div class="player-header">
+                    <div class="player-name">{{ player1.name }}</div>
+                    <div class="player-status" :class="{ active: currentPlayer === 1, waiting: currentPlayer !== 1 }">
+                        {{ currentPlayer === 1 ? 'ACTIF' : 'EN ATTENTE' }}
+                    </div>
+                </div>
+                
+                <div v-if="currentPlayer === 1" class="timer-display" 
+                     :class="{ warning: timeLeft <= 10 && timeLeft > 5, danger: timeLeft <= 5 }">
+                    {{ timeLeft }}s
+                    <span v-if="isDoubleTime" class="double-time-indicator">TEMPS DOUBLE</span>
+                </div>
+
+                <div class="score-section">
+                    <span class="score-label">Parties gagnées:</span>
+                    <div class="score-controls">
+                        <button class="btn-score minus" @click="adjustScore(1, -1)" 
+                                :disabled="player1.matchScore === 0">-</button>
+                        <span class="score-value">{{ player1.matchScore }}</span>
+                        <button class="btn-score plus" @click="adjustScore(1, 1)">+</button>
+                    </div>
+                </div>
+                
+                <div class="extension-section">
+                    <button class="extension-btn" @click="useExtension(1)" 
+                            :disabled="!player1.hasExtension || currentPlayer !== 1 || !isTimerRunning || isBreaking">
+                        {{ player1.hasExtension ? 'Utiliser Extension' : 'Extension utilisée' }}
+                    </button>
+                    <div v-if="!player1.hasExtension" class="extension-used">
+                        Extension déjà utilisée cette partie
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-center">
+                <div v-if="isBreaking" class="break-message">
+                    🎱 CASSE (BREAK) 🎱<br>
+                    Pas de limite de temps
+                </div>
+
+                <div v-if="isBreaking" class="break-buttons">
+                    <button class="btn btn-primary" @click="validateBreak(true)">
+                        ✅ Casse valide
+                    </button>
+                    <button class="btn btn-danger" @click="validateBreak(false)">
+                        ❌ Casse non valide
+                    </button>
+                </div>
+
+                <button v-if="!isBreaking && !isTimerRunning && !isPaused" 
+                        class="btn btn-primary" @click="startTimer">
+                    ▶️ Démarrer
+                </button>
+
+                <button v-if="isTimerRunning && !isPaused" 
+                        class="btn btn-secondary" @click="pauseTimer">
+                    ⏸️ Pause
+                </button>
+
+                <button v-if="isPaused" 
+                        class="btn btn-primary" @click="resumeTimer">
+                    ▶️ Reprendre
+                </button>
+
+                <button v-if="(isTimerRunning || isPaused) && !isBreaking" 
+                        class="btn btn-stop" @click="stopTimer">
+                    ⏹️ Stop (Reset Timer)
+                </button>
+
+                <button class="btn btn-info" @click="manualSwitchPlayer" :disabled="isBreaking">
+                    🔄 Changer de joueur
+                </button>
+
+                <button class="btn btn-info" @click="newGame">
+                    🔄 Nouvelle Partie
+                </button>
+
+                <button class="btn btn-danger" @click="resetMatch">
+                    🔴 Réinitialiser Match
+                </button>
+            </div>
+
+            <div class="player-card" :class="{ active: currentPlayer === 2 }">
+                <div class="player-header">
+                    <div class="player-name">{{ player2.name }}</div>
+                    <div class="player-status" :class="{ active: currentPlayer === 2, waiting: currentPlayer !== 2 }">
+                        {{ currentPlayer === 2 ? 'ACTIF' : 'EN ATTENTE' }}
+                    </div>
+                </div>
+                
+                <div v-if="currentPlayer === 2" class="timer-display" 
+                     :class="{ warning: timeLeft <= 10 && timeLeft > 5, danger: timeLeft <= 5 }">
+                    {{ timeLeft }}s
+                    <span v-if="isDoubleTime" class="double-time-indicator">TEMPS DOUBLE</span>
+                </div>
+
+                <div class="score-section">
+                    <span class="score-label">Parties gagnées:</span>
+                    <div class="score-controls">
+                        <button class="btn-score minus" @click="adjustScore(2, -1)" 
+                                :disabled="player2.matchScore === 0">-</button>
+                        <span class="score-value">{{ player2.matchScore }}</span>
+                        <button class="btn-score plus" @click="adjustScore(2, 1)">+</button>
+                    </div>
+                </div>
+                
+                <div class="extension-section">
+                    <button class="extension-btn" @click="useExtension(2)" 
+                            :disabled="!player2.hasExtension || currentPlayer !== 2 || !isTimerRunning || isBreaking">
+                        {{ player2.hasExtension ? 'Utiliser Extension' : 'Extension utilisée' }}
+                    </button>
+                    <div v-if="!player2.hasExtension" class="extension-used">
+                        Extension déjà utilisée cette partie
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    player1: {
+                        name: 'Joueur 1',
+                        matchScore: 0,
+                        hasExtension: true
+                    },
+                    player2: {
+                        name: 'Joueur 2',
+                        matchScore: 0,
+                        hasExtension: true
+                    },
+                    currentPlayer: 1,
+                    currentGame: 1,
+                    breakingPlayer: 1,
+                    isBreaking: true,
+                    isTimerRunning: false,
+                    isPaused: false,
+                    timeLeft: 30,
+                    timePerShot: 30,
+                    extensionTime: 15,
+                    timer: null,
+                    isDoubleTime: false,
+                    gameStatus: 'En attente du coup d\'envoi'
+                };
+            },
+            methods: {
+                startTimer() {
+                    if (this.isBreaking) return;
+                    
+                    this.isTimerRunning = true;
+                    this.isPaused = false;
+                    this.gameStatus = `${this.getCurrentPlayer().name} joue`;
+                    
+                    this.timer = setInterval(() => {
+                        if (this.timeLeft > 0) {
+                            this.timeLeft--;
+                        } else {
+                            this.handleTimeout();
+                        }
+                    }, 1000);
+                },
+                
+                pauseTimer() {
+                    if (!this.isTimerRunning) return;
+                    
+                    this.isPaused = true;
+                    this.isTimerRunning = false;
+                    clearInterval(this.timer);
+                    this.gameStatus = 'Partie en pause';
+                },
+                
+                resumeTimer() {
+                    if (!this.isPaused) return;
+                    
+                    this.isPaused = false;
+                    this.isTimerRunning = true;
+                    this.gameStatus = `${this.getCurrentPlayer().name} joue`;
+                    
+                    this.timer = setInterval(() => {
+                        if (this.timeLeft > 0) {
+                            this.timeLeft--;
+                        } else {
+                            this.handleTimeout();
+                        }
+                    }, 1000);
+                },
+
+                stopTimer() {
+                    clearInterval(this.timer);
+                    this.isTimerRunning = false;
+                    this.isPaused = false;
+                    this.timeLeft = this.timePerShot;
+                    this.isDoubleTime = false;
+                    this.gameStatus = 'Timer réinitialisé';
+                },
+                
+                handleTimeout() {
+                    clearInterval(this.timer);
+                    this.isTimerRunning = false;
+                    this.gameStatus = `Faute de ${this.getCurrentPlayer().name} - Temps écoulé`;
+                    
+                    setTimeout(() => {
+                        this.switchPlayer();
+                        this.timeLeft = this.timePerShot;
+                        this.isDoubleTime = false;
+                    }, 2000);
+                },
+                
+                switchPlayer() {
+                    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                    this.timeLeft = this.timePerShot;
+                    this.isDoubleTime = false;
+                    this.gameStatus = `Tour de ${this.getCurrentPlayer().name}`;
+                },
+                
+                validateBreak(isValid) {
+                    this.isBreaking = false;
+                    
+                    if (isValid) {
+                        this.isDoubleTime = true;
+                        this.timeLeft = this.timePerShot * 2;
+                        this.gameStatus = `${this.getCurrentPlayer().name} continue avec temps double`;
+                    } else {
+                        this.switchPlayer();
+                        this.isDoubleTime = true;
+                        this.timeLeft = this.timePerShot * 2;
+                        this.gameStatus = `Casse non valide - ${this.getCurrentPlayer().name} joue avec temps double`;
+                    }
+                },
+                
+                useExtension(player) {
+                    if ((player === 1 && !this.player1.hasExtension) || 
+                        (player === 2 && !this.player2.hasExtension)) {
+                        return;
+                    }
+                    
+                    if (player === this.currentPlayer && this.isTimerRunning) {
+                        this.timeLeft += this.extensionTime;
+                        if (player === 1) {
+                            this.player1.hasExtension = false;
+                        } else {
+                            this.player2.hasExtension = false;
+                        }
+                        this.gameStatus = `Extension utilisée par ${this.getCurrentPlayer().name}`;
+                    }
+                },
+
+                adjustScore(player, value) {
+                    if (player === 1) {
+                        this.player1.matchScore = Math.max(0, this.player1.matchScore + value);
+                    } else {
+                        this.player2.matchScore = Math.max(0, this.player2.matchScore + value);
+                    }
+                    
+                    if (value > 0) {
+                        this.gameStatus = `${player === 1 ? this.player1.name : this.player2.name} gagne la partie!`;
+                        setTimeout(() => {
+                            this.newGame();
+                        }, 2000);
+                    }
+                },
+                
+                newGame() {
+                    clearInterval(this.timer);
+                    this.currentGame++;
+                    this.breakingPlayer = this.breakingPlayer === 1 ? 2 : 1;
+                    this.currentPlayer = this.breakingPlayer;
+                    this.isBreaking = true;
+                    this.isTimerRunning = false;
+                    this.isPaused = false;
+                    this.timeLeft = this.timePerShot;
+                    this.isDoubleTime = false;
+                    this.player1.hasExtension = true;
+                    this.player2.hasExtension = true;
+                    this.gameStatus = `Partie ${this.currentGame} - ${this.getCurrentPlayer().name} fait la casse`;
+                },
+                
+                resetMatch() {
+                    if (confirm('Êtes-vous sûr de vouloir réinitialiser le match complet?')) {
+                        clearInterval(this.timer);
+                        this.player1.matchScore = 0;
+                        this.player2.matchScore = 0;
+                        this.currentGame = 1;
+                        this.breakingPlayer = 1;
+                        this.currentPlayer = 1;
+                        this.isBreaking = true;
+                        this.isTimerRunning = false;
+                        this.isPaused = false;
+                        this.timeLeft = this.timePerShot;
+                        this.isDoubleTime = false;
+                        this.player1.hasExtension = true;
+                        this.player2.hasExtension = true;
+                        this.gameStatus = 'Match réinitialisé - En attente du coup d\'envoi';
+                    }
+                },
+                
+                getCurrentPlayer() {
+                    return this.currentPlayer === 1 ? this.player1 : this.player2;
+                },
+
+                manualSwitchPlayer() {
+                    clearInterval(this.timer);
+                    this.isTimerRunning = false;
+                    this.isPaused = false;
+                    this.switchPlayer();
+                    this.timeLeft = this.timePerShot;
+                    this.gameStatus = `Tour de ${this.getCurrentPlayer().name}`;
+                }
+            },
+            
+            beforeUnmount() {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
