@@ -1,4 +1,4 @@
-# Billard Game Manager (`ASSIST WITH IA CLAUD AI and COPILOT`)
+# Billard Game Manager (`Developed with the help of ChatGPT (OpenAI) and CLAUD AI  to speed up development `)
 
 ## Overview
 
