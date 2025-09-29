@@ -407,13 +407,19 @@
 <body>
     <div id="app">
         <div class="header">
-            <h1>🎱 Gestionnaire de Parties de Billard 🎱</h1>
+            <h1>🎱 {{ t('title') }} 🎱</h1>
+            <div style="text-align:right; margin-bottom:10px;">
+                <select v-model="lang" style="padding:5px; border-radius:5px;">
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                </select>
+            </div>
             <div class="match-info">
                 <div class="match-score">
-                    Match: {{ player1.matchScore }} - {{ player2.matchScore }}
+                    {{ t('match') }}: {{ player1.matchScore }} - {{ player2.matchScore }}
                 </div>
                 <div class="match-score">
-                    Partie #{{ currentGame }}
+                    {{ t('game') }} #{{ currentGame }}
                 </div>
                 <div class="game-status" v-if="gameStatus">
                     {{ gameStatus }}
@@ -422,22 +428,22 @@
         </div>
 
         <div class="config-section">
-            <h2>⚙️ Configuration</h2>
+            <h2>⚙️ {{ t('config') }}</h2>
             <div class="config-grid">
                 <div class="config-item">
-                    <label>Temps par coup (secondes)</label>
+                    <label>{{ t('time_per_shot') }}</label>
                     <input type="number" v-model.number="timePerShot" min="10" :disabled="isTimerRunning">
                 </div>
                 <div class="config-item">
-                    <label>Temps d'extension (secondes)</label>
+                    <label>{{ t('extension_time') }}</label>
                     <input type="number" v-model.number="extensionTime" min="5" :disabled="isTimerRunning">
                 </div>
                 <div class="config-item">
-                    <label>Joueur 1</label>
+                    <label>{{ t('player1') }}</label>
                     <input type="text" v-model="player1.name" :disabled="isTimerRunning">
                 </div>
                 <div class="config-item">
-                    <label>Joueur 2</label>
+                    <label>{{ t('player2') }}</label>
                     <input type="text" v-model="player2.name" :disabled="isTimerRunning">
                 </div>
             </div>
@@ -448,18 +454,18 @@
                 <div class="player-header">
                     <div class="player-name">{{ player1.name }}</div>
                     <div class="player-status" :class="{ active: currentPlayer === 1, waiting: currentPlayer !== 1 }">
-                        {{ currentPlayer === 1 ? 'ACTIF' : 'EN ATTENTE' }}
+                        {{ currentPlayer === 1 ? t('active') : t('waiting') }}
                     </div>
                 </div>
                 
                 <div v-if="currentPlayer === 1" class="timer-display" 
                      :class="{ warning: timeLeft <= 10 && timeLeft > 5, danger: timeLeft <= 5 }">
                     {{ timeLeft }}s
-                    <span v-if="isDoubleTime" class="double-time-indicator">TEMPS DOUBLE</span>
+                    <span v-if="isDoubleTime" class="double-time-indicator">{{ t('double_time') }}</span>
                 </div>
 
                 <div class="score-section">
-                    <span class="score-label">Parties gagnées:</span>
+                    <span class="score-label">{{ t('games_won') }}:</span>
                     <div class="score-controls">
                         <button class="btn-score minus" @click="adjustScore(1, -1)" 
                                 :disabled="player1.matchScore === 0">-</button>
@@ -471,59 +477,59 @@
                 <div class="extension-section">
                     <button class="extension-btn" @click="useExtension(1)" 
                             :disabled="!player1.hasExtension || currentPlayer !== 1 || !isTimerRunning || isBreaking">
-                        {{ player1.hasExtension ? 'Utiliser Extension' : 'Extension utilisée' }}
+                        {{ player1.hasExtension ? t('use_extension') : t('extension_used') }}
                     </button>
                     <div v-if="!player1.hasExtension" class="extension-used">
-                        Extension déjà utilisée cette partie
+                        {{ t('extension_already_used') }}
                     </div>
                 </div>
             </div>
 
             <div class="controls-center">
                 <div v-if="isBreaking" class="break-message">
-                    🎱 CASSE (BREAK) 🎱<br>
-                    Pas de limite de temps
+                    🎱 {{ t('break') }} 🎱<br>
+                    {{ t('no_time_limit') }}
                 </div>
 
                 <div v-if="isBreaking" class="break-buttons">
                     <button class="btn btn-primary" @click="validateBreak(true)">
-                        ✅ Casse valide
+                        ✅ {{ t('valid_break') }}
                     </button>
                     <button class="btn btn-danger" @click="validateBreak(false)">
-                        ❌ Casse non valide
+                        ❌ {{ t('invalid_break') }}
                     </button>
                 </div>
 
                 <button v-if="!isBreaking && !isTimerRunning && !isPaused" 
                         class="btn btn-primary" @click="startTimer">
-                    ▶️ Démarrer
+                    ▶️ {{ t('start') }}
                 </button>
 
                 <button v-if="isTimerRunning && !isPaused" 
                         class="btn btn-secondary" @click="pauseTimer">
-                    ⏸️ Pause
+                    ⏸️ {{ t('pause') }}
                 </button>
 
                 <button v-if="isPaused" 
                         class="btn btn-primary" @click="resumeTimer">
-                    ▶️ Reprendre
+                    ▶️ {{ t('resume') }}
                 </button>
 
                 <button v-if="(isTimerRunning || isPaused) && !isBreaking" 
                         class="btn btn-stop" @click="stopTimer">
-                    ⏹️ Stop (Reset Timer)
+                    ⏹️ {{ t('stop_reset') }}
                 </button>
 
                 <button class="btn btn-info" @click="manualSwitchPlayer" :disabled="isBreaking">
-                    🔄 Changer de joueur
+                    🔄 {{ t('switch_player') }}
                 </button>
 
                 <button class="btn btn-info" @click="newGame">
-                    🔄 Nouvelle Partie
+                    🔄 {{ t('new_game') }}
                 </button>
 
                 <button class="btn btn-danger" @click="resetMatch">
-                    🔴 Réinitialiser Match
+                    🔴 {{ t('reset_match') }}
                 </button>
             </div>
 
@@ -531,18 +537,18 @@
                 <div class="player-header">
                     <div class="player-name">{{ player2.name }}</div>
                     <div class="player-status" :class="{ active: currentPlayer === 2, waiting: currentPlayer !== 2 }">
-                        {{ currentPlayer === 2 ? 'ACTIF' : 'EN ATTENTE' }}
+                        {{ currentPlayer === 2 ? t('active') : t('waiting') }}
                     </div>
                 </div>
                 
                 <div v-if="currentPlayer === 2" class="timer-display" 
                      :class="{ warning: timeLeft <= 10 && timeLeft > 5, danger: timeLeft <= 5 }">
                     {{ timeLeft }}s
-                    <span v-if="isDoubleTime" class="double-time-indicator">TEMPS DOUBLE</span>
+                    <span v-if="isDoubleTime" class="double-time-indicator">{{ t('double_time') }}</span>
                 </div>
 
                 <div class="score-section">
-                    <span class="score-label">Parties gagnées:</span>
+                    <span class="score-label">{{ t('games_won') }}:</span>
                     <div class="score-controls">
                         <button class="btn-score minus" @click="adjustScore(2, -1)" 
                                 :disabled="player2.matchScore === 0">-</button>
@@ -554,10 +560,10 @@
                 <div class="extension-section">
                     <button class="extension-btn" @click="useExtension(2)" 
                             :disabled="!player2.hasExtension || currentPlayer !== 2 || !isTimerRunning || isBreaking">
-                        {{ player2.hasExtension ? 'Utiliser Extension' : 'Extension utilisée' }}
+                        {{ player2.hasExtension ? t('use_extension') : t('extension_used') }}
                     </button>
                     <div v-if="!player2.hasExtension" class="extension-used">
-                        Extension déjà utilisée cette partie
+                        {{ t('extension_already_used') }}
                     </div>
                 </div>
             </div>
@@ -567,16 +573,97 @@
     <script>
         const { createApp } = Vue;
 
+        const translations = {
+            en: {
+                title: "Billiard Match Manager",
+                match: "Match",
+                game: "Game",
+                config: "Configuration",
+                time_per_shot: "Time per shot (seconds)",
+                extension_time: "Extension time (seconds)",
+                player1: "Player 1",
+                player2: "Player 2",
+                active: "ACTIVE",
+                waiting: "WAITING",
+                double_time: "DOUBLE TIME",
+                games_won: "Games won",
+                use_extension: "Use Extension",
+                extension_used: "Extension used",
+                extension_already_used: "Extension already used this game",
+                break: "BREAK",
+                no_time_limit: "No time limit",
+                valid_break: "Valid break",
+                invalid_break: "Invalid break",
+                start: "Start",
+                pause: "Pause",
+                resume: "Resume",
+                stop_reset: "Stop (Reset Timer)",
+                switch_player: "Switch Player",
+                new_game: "New Game",
+                reset_match: "Reset Match",
+                waiting_break: "Waiting for break-off",
+                paused: "Game paused",
+                timer_reset: "Timer reset",
+                win: "{player} wins the game!",
+                extension_used_by: "Extension used by {player}",
+                turn: "{player}'s turn",
+                double_time_turn: "{player} continues with double time",
+                invalid_break_turn: "Invalid break - {player} plays with double time",
+                timeout: "Foul by {player} - Time out",
+                match_reset: "Match reset - Waiting for break-off"
+            },
+            fr: {
+                title: "Gestionnaire de Parties de Billard",
+                match: "Match",
+                game: "Partie",
+                config: "Configuration",
+                time_per_shot: "Temps par coup (secondes)",
+                extension_time: "Temps d'extension (secondes)",
+                player1: "Joueur 1",
+                player2: "Joueur 2",
+                active: "ACTIF",
+                waiting: "EN ATTENTE",
+                double_time: "TEMPS DOUBLE",
+                games_won: "Parties gagnées",
+                use_extension: "Utiliser Extension",
+                extension_used: "Extension utilisée",
+                extension_already_used: "Extension déjà utilisée cette partie",
+                break: "CASSE (BREAK)",
+                no_time_limit: "Pas de limite de temps",
+                valid_break: "Casse valide",
+                invalid_break: "Casse non valide",
+                start: "Démarrer",
+                pause: "Pause",
+                resume: "Reprendre",
+                stop_reset: "Stop (Reset Timer)",
+                switch_player: "Changer de joueur",
+                new_game: "Nouvelle Partie",
+                reset_match: "Réinitialiser Match",
+                waiting_break: "En attente du coup d'envoi",
+                paused: "Partie en pause",
+                timer_reset: "Timer réinitialisé",
+                win: "{player} gagne la partie!",
+                extension_used_by: "Extension utilisée par {player}",
+                turn: "Tour de {player}",
+                double_time_turn: "{player} continue avec temps double",
+                invalid_break_turn: "Casse non valide - {player} joue avec temps double",
+                timeout: "Faute de {player} - Temps écoulé",
+                match_reset: "Match réinitialisé - En attente du coup d'envoi"
+            }
+        };
+
         createApp({
             data() {
                 return {
+                    lang: 'en',
+                    translations,
                     player1: {
-                        name: 'Joueur 1',
+                        name: translations.en.player1,
                         matchScore: 0,
                         hasExtension: true
                     },
                     player2: {
-                        name: 'Joueur 2',
+                        name: translations.en.player2,
                         matchScore: 0,
                         hasExtension: true
                     },
@@ -591,17 +678,42 @@
                     extensionTime: 15,
                     timer: null,
                     isDoubleTime: false,
-                    gameStatus: 'En attente du coup d\'envoi'
+                    gameStatus: translations.en.waiting_break
                 };
             },
+            watch: {
+                lang(newLang) {
+                    // Update player names if default
+                    if (this.player1.name === this.translations.en.player1 || this.player1.name === this.translations.fr.player1) {
+                        this.player1.name = this.translations[newLang].player1;
+                    }
+                    if (this.player2.name === this.translations.en.player2 || this.player2.name === this.translations.fr.player2) {
+                        this.player2.name = this.translations[newLang].player2;
+                    }
+                    // Update status message if it's a default one
+                    if (
+                        this.gameStatus === this.translations.en.waiting_break ||
+                        this.gameStatus === this.translations.fr.waiting_break ||
+                        this.gameStatus === this.translations.en.match_reset ||
+                        this.gameStatus === this.translations.fr.match_reset
+                    ) {
+                        this.gameStatus = this.t('waiting_break');
+                    }
+                }
+            },
             methods: {
+                t(key, vars = {}) {
+                    let str = this.translations[this.lang][key] || key;
+                    Object.keys(vars).forEach(k => {
+                        str = str.replace(`{${k}}`, vars[k]);
+                    });
+                    return str;
+                },
                 startTimer() {
                     if (this.isBreaking) return;
-                    
                     this.isTimerRunning = true;
                     this.isPaused = false;
-                    this.gameStatus = `${this.getCurrentPlayer().name} joue`;
-                    
+                    this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
                     this.timer = setInterval(() => {
                         if (this.timeLeft > 0) {
                             this.timeLeft--;
@@ -609,24 +721,17 @@
                             this.handleTimeout();
                         }
                     }, 1000);
-                },
-                
-                pauseTimer() {
+                },pauseTimer() {
                     if (!this.isTimerRunning) return;
-                    
                     this.isPaused = true;
                     this.isTimerRunning = false;
                     clearInterval(this.timer);
-                    this.gameStatus = 'Partie en pause';
-                },
-                
-                resumeTimer() {
+                    this.gameStatus = this.t('paused');
+                },resumeTimer() {
                     if (!this.isPaused) return;
-                    
                     this.isPaused = false;
                     this.isTimerRunning = true;
-                    this.gameStatus = `${this.getCurrentPlayer().name} joue`;
-                    
+                    this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
                     this.timer = setInterval(() => {
                         if (this.timeLeft > 0) {
                             this.timeLeft--;
@@ -634,84 +739,65 @@
                             this.handleTimeout();
                         }
                     }, 1000);
-                },
-
-                stopTimer() {
+                },stopTimer() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
                     this.isPaused = false;
                     this.timeLeft = this.timePerShot;
                     this.isDoubleTime = false;
-                    this.gameStatus = 'Timer réinitialisé';
-                },
-                
-                handleTimeout() {
+                    this.gameStatus = this.t('timer_reset');
+                },handleTimeout() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
-                    this.gameStatus = `Faute de ${this.getCurrentPlayer().name} - Temps écoulé`;
-                    
+                    this.gameStatus = this.t('timeout', { player: this.getCurrentPlayer().name });
                     setTimeout(() => {
                         this.switchPlayer();
                         this.timeLeft = this.timePerShot;
                         this.isDoubleTime = false;
                     }, 2000);
-                },
-                
-                switchPlayer() {
+                },switchPlayer() {
                     this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
                     this.timeLeft = this.timePerShot;
                     this.isDoubleTime = false;
-                    this.gameStatus = `Tour de ${this.getCurrentPlayer().name}`;
-                },
-                
-                validateBreak(isValid) {
+                    this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
+                },validateBreak(isValid) {
                     this.isBreaking = false;
-                    
                     if (isValid) {
                         this.isDoubleTime = true;
                         this.timeLeft = this.timePerShot * 2;
-                        this.gameStatus = `${this.getCurrentPlayer().name} continue avec temps double`;
+                        this.gameStatus = this.t('double_time_turn', { player: this.getCurrentPlayer().name });
                     } else {
                         this.switchPlayer();
                         this.isDoubleTime = true;
                         this.timeLeft = this.timePerShot * 2;
-                        this.gameStatus = `Casse non valide - ${this.getCurrentPlayer().name} joue avec temps double`;
+                        this.gameStatus = this.t('invalid_break_turn', { player: this.getCurrentPlayer().name });
                     }
-                },
-                
-                useExtension(player) {
+                },useExtension(player) {
                     if ((player === 1 && !this.player1.hasExtension) || 
                         (player === 2 && !this.player2.hasExtension)) {
                         return;
-                    }
-                    
-                    if (player === this.currentPlayer && this.isTimerRunning) {
+                    }if (player === this.currentPlayer && this.isTimerRunning) {
                         this.timeLeft += this.extensionTime;
                         if (player === 1) {
                             this.player1.hasExtension = false;
                         } else {
                             this.player2.hasExtension = false;
                         }
-                        this.gameStatus = `Extension utilisée par ${this.getCurrentPlayer().name}`;
+                        this.gameStatus = this.t('extension_used_by', { player: this.getCurrentPlayer().name });
                     }
-                },
-
-                adjustScore(player, value) {
+                },adjustScore(player, value) {
                     if (player === 1) {
                         this.player1.matchScore = Math.max(0, this.player1.matchScore + value);
                     } else {
                         this.player2.matchScore = Math.max(0, this.player2.matchScore + value);
                     }
-                    
                     if (value > 0) {
-                        this.gameStatus = `${player === 1 ? this.player1.name : this.player2.name} gagne la partie!`;
+                        this.gameStatus = this.t('win', { player: player === 1 ? this.player1.name : this.player2.name });
                         setTimeout(() => {
                             this.newGame();
                         }, 2000);
                     }
-                },
-                
-                newGame() {
+                },newGame() {
                     clearInterval(this.timer);
                     this.currentGame++;
                     this.breakingPlayer = this.breakingPlayer === 1 ? 2 : 1;
@@ -723,11 +809,9 @@
                     this.isDoubleTime = false;
                     this.player1.hasExtension = true;
                     this.player2.hasExtension = true;
-                    this.gameStatus = `Partie ${this.currentGame} - ${this.getCurrentPlayer().name} fait la casse`;
-                },
-                
-                resetMatch() {
-                    if (confirm('Êtes-vous sûr de vouloir réinitialiser le match complet?')) {
+                    this.gameStatus = this.t('game') + ' ' + this.currentGame + ' - ' + this.getCurrentPlayer().name + ' ' + this.t('break').toLowerCase();
+                },resetMatch() {
+                    if (confirm(this.t('reset_match') + ' ?')) {
                         clearInterval(this.timer);
                         this.player1.matchScore = 0;
                         this.player2.matchScore = 0;
@@ -741,25 +825,19 @@
                         this.isDoubleTime = false;
                         this.player1.hasExtension = true;
                         this.player2.hasExtension = true;
-                        this.gameStatus = 'Match réinitialisé - En attente du coup d\'envoi';
+                        this.gameStatus = this.t('match_reset');
                     }
-                },
-                
-                getCurrentPlayer() {
+                },getCurrentPlayer() {
                     return this.currentPlayer === 1 ? this.player1 : this.player2;
-                },
-
-                manualSwitchPlayer() {
+                },manualSwitchPlayer() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
                     this.isPaused = false;
                     this.switchPlayer();
                     this.timeLeft = this.timePerShot;
-                    this.gameStatus = `Tour de ${this.getCurrentPlayer().name}`;
+                    this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
                 }
-            },
-            
-            beforeUnmount() {
+            },beforeUnmount() {
                 if (this.timer) {
                     clearInterval(this.timer);
                 }
