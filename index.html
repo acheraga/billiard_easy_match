@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestionnaire de Parties de Billard</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
@@ -16,28 +16,32 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0f4c0f 0%, #1a6b1a 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #app {
             max-width: 1200px;
             margin: 0 auto;
+            padding-bottom: env(safe-area-inset-bottom, 10px);
         }
 
+        /* HEADER RESPONSIVE */
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
-            padding: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
+            border-radius: 12px;
             backdrop-filter: blur(10px);
         }
 
         .header h1 {
-            font-size: 2.5rem;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            word-break: break-word;
         }
 
         .match-info {
@@ -45,62 +49,97 @@
             justify-content: space-around;
             align-items: center;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 10px;
+            margin-top: 10px;
         }
 
         .match-score {
-            font-size: 1.5rem;
-            padding: 10px 20px;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            padding: 8px 15px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            border-radius: 8px;
+            min-width: 120px;
+            text-align: center;
         }
 
+        /* LANG SELECTOR */
+        .lang-selector {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+
+        select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        /* GAME LAYOUT - MOBILE FIRST */
         .game-container {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-            align-items: start;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        @media (max-width: 768px) {
+        @media (min-width: 768px) {
             .game-container {
-                grid-template-columns: 1fr;
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                gap: 20px;
             }
         }
 
+        /* PLAYER CARD RESPONSIVE */
         .player-card {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
+            order: 1;
+        }
+
+        @media (min-width: 768px) {
+            .player-card {
+                padding: 20px;
+            }
+            .player-card:nth-child(1) { order: 1; }
+            .player-card:nth-child(3) { order: 3; }
         }
 
         .player-card.active {
-            transform: scale(1.05);
-            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
-            border: 3px solid #ffd700;
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+            border: 2px solid #ffd700;
         }
 
         .player-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .player-name {
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 3.5vw, 1.5rem);
             font-weight: bold;
             color: #1a6b1a;
+            word-break: break-word;
+            max-width: 60%;
         }
 
         .player-status {
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         .player-status.active {
@@ -113,15 +152,21 @@
             color: #666;
         }
 
+        /* TIMER RESPONSIVE */
         .timer-display {
-            font-size: 3rem;
+            font-size: clamp(2rem, 8vw, 3rem);
             font-weight: bold;
             text-align: center;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
             background: #f5f5f5;
             transition: all 0.3s ease;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .timer-display.warning {
@@ -137,264 +182,219 @@
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.03); }
         }
 
+        /* SCORE SECTION RESPONSIVE */
         .score-section {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 15px 0;
-            padding: 15px;
+            margin: 12px 0;
+            padding: 12px;
             background: #f9f9f9;
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         .score-label {
             font-weight: bold;
             color: #333;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
         }
 
         .score-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
 
         .score-value {
-            font-size: 1.3rem;
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
             font-weight: bold;
             min-width: 30px;
             text-align: center;
         }
 
+        /* BUTTONS RESPONSIVE */
         .btn-score {
-            width: 35px;
-            height: 35px;
+            width: clamp(35px, 8vw, 40px);
+            height: clamp(35px, 8vw, 40px);
             border-radius: 50%;
             border: none;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             cursor: pointer;
             transition: all 0.3s ease;
             color: white;
+            touch-action: manipulation;
         }
 
         .btn-score.plus {
             background: #4caf50;
         }
 
-        .btn-score.plus:hover:not(:disabled) {
-            background: #45a049;
-            transform: scale(1.1);
-        }
-
         .btn-score.minus {
             background: #f44336;
         }
 
-        .btn-score.minus:hover:not(:disabled) {
-            background: #da190b;
-            transform: scale(1.1);
-        }
-
-        .btn-score:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .extension-section {
-            margin: 20px 0;
+        .btn-score:active:not(:disabled) {
+            transform: scale(0.95);
         }
 
         .extension-btn {
             width: 100%;
-            padding: 12px;
+            padding: clamp(10px, 2.5vw, 12px);
             background: #2196f3;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
+            touch-action: manipulation;
         }
 
-        .extension-btn:hover:not(:disabled) {
-            background: #1976d2;
-            transform: translateY(-2px);
-        }
-
-        .extension-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .extension-used {
-            text-align: center;
-            color: #666;
-            margin-top: 10px;
-            font-style: italic;
-        }
-
+        /* CONTROLS CENTER - MOBILE FRIENDLY */
         .controls-center {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .break-message {
-            text-align: center;
-            padding: 15px;
-            background: #ffd700;
-            color: #333;
-            border-radius: 10px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            animation: glow 2s ease-in-out infinite;
-        }
-
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
-        }
-
-        .break-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
             gap: 10px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            order: 2;
+        }
+
+        @media (min-width: 768px) {
+            .controls-center {
+                order: 2;
+            }
+        }
+
+        /* BUTTON GRID FOR MOBILE */
+        .control-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            width: 100%;
         }
 
         .btn {
-            padding: 12px 20px;
+            padding: clamp(10px, 2.5vw, 12px);
             border: none;
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 8px;
+            font-size: clamp(0.85rem, 2.2vw, 0.95rem);
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
+            min-height: 44px;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
 
-        .btn-primary {
-            background: #4caf50;
-            color: white;
+        .btn:active:not(:disabled) {
+            transform: translateY(1px);
         }
 
-        .btn-primary:hover:not(:disabled) {
-            background: #45a049;
-            transform: translateY(-2px);
+        .btn-icon {
+            font-size: 1.2em;
         }
 
-        .btn-secondary {
-            background: #ff9800;
-            color: white;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: #f57c00;
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: #f44336;
-            color: white;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            background: #da190b;
-            transform: translateY(-2px);
-        }
-
-        .btn-info {
-            background: #2196f3;
-            color: white;
-        }
-
-        .btn-info:hover:not(:disabled) {
-            background: #1976d2;
-            transform: translateY(-2px);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-stop {
-            background: #9c27b0;
-            color: white;
-        }
-
-        .btn-stop:hover:not(:disabled) {
-            background: #7b1fa2;
-            transform: translateY(-2px);
-        }
-
+        /* CONFIG SECTION RESPONSIVE */
         .config-section {
             background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .config-section h2 {
             color: #1a6b1a;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
         }
 
         .config-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
         }
 
-        .config-item {
-            display: flex;
-            flex-direction: column;
+        @media (max-width: 480px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .config-item label {
             font-weight: bold;
             margin-bottom: 5px;
             color: #333;
+            font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+            display: block;
         }
 
         .config-item input {
             padding: 10px;
             border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            width: 100%;
+        }
+
+        /* BREAK MESSAGE */
+        .break-message {
+            text-align: center;
+            padding: 12px;
+            background: #ffd700;
+            color: #333;
             border-radius: 8px;
-            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            animation: glow 2s ease-in-out infinite;
         }
 
-        .config-item input:focus {
-            outline: none;
-            border-color: #4caf50;
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); }
         }
 
+        /* BREAK BUTTONS GRID */
+        .break-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* GAME STATUS */
         .game-status {
             text-align: center;
-            padding: 10px;
+            padding: 8px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
-            margin-top: 10px;
+            margin-top: 8px;
+            font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+            word-break: break-word;
         }
 
+        /* DOUBLE TIME INDICATOR */
         .double-time-indicator {
             background: #ff5722;
             color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            display: inline-block;
-            margin-left: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: clamp(0.7rem, 2vw, 0.8rem);
+            margin-top: 5px;
             animation: blink 1s infinite;
         }
 
@@ -402,18 +402,49 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
         }
+
+        /* SWIPE HINT FOR MOBILE */
+        .swipe-hint {
+            display: none;
+        }
+
+        @media (max-width: 767px) and (orientation: portrait) {
+            .swipe-hint {
+                display: block;
+                text-align: center;
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 0.8rem;
+                margin-top: 5px;
+                padding: 5px;
+            }
+            
+            /* HORIZONTAL SCROLL FOR WIDE CONTENT */
+            .player-card {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* SAFE AREA FOR NOTCHED PHONES */
+        @supports(padding: max(0px)) {
+            body {
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+                padding-top: max(10px, env(safe-area-inset-top));
+            }
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="header">
-            <h1>🎱 {{ t('title') }} 🎱</h1>
-            <div style="text-align:right; margin-bottom:10px;">
-                <select v-model="lang" style="padding:5px; border-radius:5px;">
-                    <option value="en">English</option>
-                    <option value="fr">Français</option>
+            <div class="lang-selector">
+                <select v-model="lang">
+                    <option value="en">EN</option>
+                    <option value="fr">FR</option>
                 </select>
             </div>
+            <h1>🎱 {{ t('title') }} 🎱</h1>
             <div class="match-info">
                 <div class="match-score">
                     {{ t('match') }}: {{ player1.matchScore }} - {{ player2.matchScore }}
@@ -424,6 +455,9 @@
                 <div class="game-status" v-if="gameStatus">
                     {{ gameStatus }}
                 </div>
+            </div>
+            <div class="swipe-hint">
+                👈 Swipe pour voir toutes les infos 👉
             </div>
         </div>
 
@@ -450,6 +484,7 @@
         </div>
 
         <div class="game-container">
+            <!-- Player 1 Card -->
             <div class="player-card" :class="{ active: currentPlayer === 1 }">
                 <div class="player-header">
                     <div class="player-name">{{ player1.name }}</div>
@@ -485,6 +520,7 @@
                 </div>
             </div>
 
+            <!-- Controls Center -->
             <div class="controls-center">
                 <div v-if="isBreaking" class="break-message">
                     🎱 {{ t('break') }} 🎱<br>
@@ -493,46 +529,49 @@
 
                 <div v-if="isBreaking" class="break-buttons">
                     <button class="btn btn-primary" @click="validateBreak(true)">
-                        ✅ {{ t('valid_break') }}
+                        <span class="btn-icon">✅</span> {{ t('valid_break') }}
                     </button>
                     <button class="btn btn-danger" @click="validateBreak(false)">
-                        ❌ {{ t('invalid_break') }}
+                        <span class="btn-icon">❌</span> {{ t('invalid_break') }}
                     </button>
                 </div>
 
-                <button v-if="!isBreaking && !isTimerRunning && !isPaused" 
-                        class="btn btn-primary" @click="startTimer">
-                    ▶️ {{ t('start') }}
-                </button>
+                <div v-else class="control-buttons-grid">
+                    <button v-if="!isTimerRunning && !isPaused" 
+                            class="btn btn-primary" @click="startTimer">
+                        <span class="btn-icon">▶️</span> {{ t('start') }}
+                    </button>
 
-                <button v-if="isTimerRunning && !isPaused" 
-                        class="btn btn-secondary" @click="pauseTimer">
-                    ⏸️ {{ t('pause') }}
-                </button>
+                    <button v-if="isTimerRunning && !isPaused" 
+                            class="btn btn-secondary" @click="pauseTimer">
+                        <span class="btn-icon">⏸️</span> {{ t('pause') }}
+                    </button>
 
-                <button v-if="isPaused" 
-                        class="btn btn-primary" @click="resumeTimer">
-                    ▶️ {{ t('resume') }}
-                </button>
+                    <button v-if="isPaused" 
+                            class="btn btn-primary" @click="resumeTimer">
+                        <span class="btn-icon">▶️</span> {{ t('resume') }}
+                    </button>
 
-                <button v-if="(isTimerRunning || isPaused) && !isBreaking" 
-                        class="btn btn-stop" @click="stopTimer">
-                    ⏹️ {{ t('stop_reset') }}
-                </button>
+                    <button v-if="(isTimerRunning || isPaused) && !isBreaking" 
+                            class="btn btn-stop" @click="stopTimer">
+                        <span class="btn-icon">⏹️</span> {{ t('stop_reset') }}
+                    </button>
 
-                <button class="btn btn-info" @click="manualSwitchPlayer" :disabled="isBreaking">
-                    🔄 {{ t('switch_player') }}
-                </button>
+                    <button class="btn btn-info" @click="manualSwitchPlayer" :disabled="isBreaking">
+                        <span class="btn-icon">🔄</span> {{ t('switch_player') }}
+                    </button>
 
-                <button class="btn btn-info" @click="newGame">
-                    🔄 {{ t('new_game') }}
-                </button>
+                    <button class="btn btn-info" @click="newGame">
+                        <span class="btn-icon">🆕</span> {{ t('new_game') }}
+                    </button>
 
-                <button class="btn btn-danger" @click="resetMatch">
-                    🔴 {{ t('reset_match') }}
-                </button>
+                    <button class="btn btn-danger" @click="resetMatch">
+                        <span class="btn-icon">🔴</span> {{ t('reset_match') }}
+                    </button>
+                </div>
             </div>
 
+            <!-- Player 2 Card -->
             <div class="player-card" :class="{ active: currentPlayer === 2 }">
                 <div class="player-header">
                     <div class="player-name">{{ player2.name }}</div>
@@ -571,6 +610,7 @@
     </div>
 
     <script>
+        // Le script Vue.js reste exactement le même que dans ta version originale
         const { createApp } = Vue;
 
         const translations = {
@@ -683,14 +723,12 @@
             },
             watch: {
                 lang(newLang) {
-                    // Update player names if default
                     if (this.player1.name === this.translations.en.player1 || this.player1.name === this.translations.fr.player1) {
                         this.player1.name = this.translations[newLang].player1;
                     }
                     if (this.player2.name === this.translations.en.player2 || this.player2.name === this.translations.fr.player2) {
                         this.player2.name = this.translations[newLang].player2;
                     }
-                    // Update status message if it's a default one
                     if (
                         this.gameStatus === this.translations.en.waiting_break ||
                         this.gameStatus === this.translations.fr.waiting_break ||
@@ -721,13 +759,15 @@
                             this.handleTimeout();
                         }
                     }, 1000);
-                },pauseTimer() {
+                },
+                pauseTimer() {
                     if (!this.isTimerRunning) return;
                     this.isPaused = true;
                     this.isTimerRunning = false;
                     clearInterval(this.timer);
                     this.gameStatus = this.t('paused');
-                },resumeTimer() {
+                },
+                resumeTimer() {
                     if (!this.isPaused) return;
                     this.isPaused = false;
                     this.isTimerRunning = true;
@@ -739,14 +779,16 @@
                             this.handleTimeout();
                         }
                     }, 1000);
-                },stopTimer() {
+                },
+                stopTimer() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
                     this.isPaused = false;
                     this.timeLeft = this.timePerShot;
                     this.isDoubleTime = false;
                     this.gameStatus = this.t('timer_reset');
-                },handleTimeout() {
+                },
+                handleTimeout() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
                     this.gameStatus = this.t('timeout', { player: this.getCurrentPlayer().name });
@@ -755,12 +797,14 @@
                         this.timeLeft = this.timePerShot;
                         this.isDoubleTime = false;
                     }, 2000);
-                },switchPlayer() {
+                },
+                switchPlayer() {
                     this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
                     this.timeLeft = this.timePerShot;
                     this.isDoubleTime = false;
                     this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
-                },validateBreak(isValid) {
+                },
+                validateBreak(isValid) {
                     this.isBreaking = false;
                     if (isValid) {
                         this.isDoubleTime = true;
@@ -772,11 +816,13 @@
                         this.timeLeft = this.timePerShot * 2;
                         this.gameStatus = this.t('invalid_break_turn', { player: this.getCurrentPlayer().name });
                     }
-                },useExtension(player) {
+                },
+                useExtension(player) {
                     if ((player === 1 && !this.player1.hasExtension) || 
                         (player === 2 && !this.player2.hasExtension)) {
                         return;
-                    }if (player === this.currentPlayer && this.isTimerRunning) {
+                    }
+                    if (player === this.currentPlayer && this.isTimerRunning) {
                         this.timeLeft += this.extensionTime;
                         if (player === 1) {
                             this.player1.hasExtension = false;
@@ -785,7 +831,8 @@
                         }
                         this.gameStatus = this.t('extension_used_by', { player: this.getCurrentPlayer().name });
                     }
-                },adjustScore(player, value) {
+                },
+                adjustScore(player, value) {
                     if (player === 1) {
                         this.player1.matchScore = Math.max(0, this.player1.matchScore + value);
                     } else {
@@ -797,7 +844,8 @@
                             this.newGame();
                         }, 2000);
                     }
-                },newGame() {
+                },
+                newGame() {
                     clearInterval(this.timer);
                     this.currentGame++;
                     this.breakingPlayer = this.breakingPlayer === 1 ? 2 : 1;
@@ -810,7 +858,8 @@
                     this.player1.hasExtension = true;
                     this.player2.hasExtension = true;
                     this.gameStatus = this.t('game') + ' ' + this.currentGame + ' - ' + this.getCurrentPlayer().name + ' ' + this.t('break').toLowerCase();
-                },resetMatch() {
+                },
+                resetMatch() {
                     if (confirm(this.t('reset_match') + ' ?')) {
                         clearInterval(this.timer);
                         this.player1.matchScore = 0;
@@ -827,9 +876,11 @@
                         this.player2.hasExtension = true;
                         this.gameStatus = this.t('match_reset');
                     }
-                },getCurrentPlayer() {
+                },
+                getCurrentPlayer() {
                     return this.currentPlayer === 1 ? this.player1 : this.player2;
-                },manualSwitchPlayer() {
+                },
+                manualSwitchPlayer() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
                     this.isPaused = false;
@@ -837,7 +888,8 @@
                     this.timeLeft = this.timePerShot;
                     this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
                 }
-            },beforeUnmount() {
+            },
+            beforeUnmount() {
                 if (this.timer) {
                     clearInterval(this.timer);
                 }
