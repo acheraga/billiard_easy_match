@@ -168,22 +168,59 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
 
         .timer-display.warning {
             background: #ff9800;
             color: white;
+            animation: pulse-warning 1s infinite;
         }
 
         .timer-display.danger {
             background: #f44336;
             color: white;
-            animation: pulse 0.5s infinite;
+            animation: pulse-danger 0.5s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.03); }
+        @keyframes pulse-warning {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 0 20px rgba(255, 152, 0, 0.8);
+            }
+        }
+
+        @keyframes pulse-danger {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 15px rgba(244, 67, 54, 0.7);
+            }
+            50% { 
+                transform: scale(1.03);
+                box-shadow: 0 0 25px rgba(244, 67, 54, 1);
+            }
+        }
+
+        /* BEEP INDICATOR */
+        .beep-indicator {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            animation: beep-flash 0.5s;
+        }
+
+        @keyframes beep-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         /* SCORE SECTION RESPONSIVE */
@@ -360,7 +397,7 @@
 
         .config-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 12px;
         }
 
@@ -368,6 +405,11 @@
             .config-grid {
                 grid-template-columns: 1fr;
             }
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
         }
 
         .config-item label {
@@ -384,6 +426,42 @@
             border-radius: 6px;
             font-size: clamp(0.9rem, 2.5vw, 1rem);
             width: 100%;
+        }
+
+        /* SOUND TOGGLE IN CONFIG */
+        .sound-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .sound-toggle-label {
+            font-weight: bold;
+            color: #333;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+
+        .sound-toggle-btn {
+            padding: 8px 15px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sound-toggle-btn:hover {
+            background: #1976d2;
+            transform: translateY(-2px);
         }
 
         /* BREAK MESSAGE */
@@ -517,6 +595,16 @@
                     <input type="text" v-model="player2.name" :disabled="isTimerRunning">
                 </div>
             </div>
+            
+            <!-- Bouton Son dans Configuration -->
+            <div class="sound-toggle">
+                <span class="sound-toggle-label">{{ t('sound') }}:</span>
+                <button class="sound-toggle-btn" @click="toggleSound">
+                    <span v-if="soundEnabled">🔊</span>
+                    <span v-else>🔇</span>
+                    {{ soundEnabled ? t('sound_on') : t('sound_off') }}
+                </button>
+            </div>
         </div>
 
         <div class="game-container">
@@ -533,6 +621,7 @@
                      :class="{ warning: timeLeft <= 10 && timeLeft > 5, danger: timeLeft <= 5 }">
                     {{ timeLeft }}s
                     <span v-if="isDoubleTime" class="double-time-indicator">{{ t('double_time') }}</span>
+                    <span v-if="showBeepIndicator && soundEnabled" class="beep-indicator">🔊</span>
                 </div>
 
                 <div class="score-section">
@@ -626,6 +715,7 @@
                      :class="{ warning: timeLeft <= 10 && timeLeft > 5, danger: timeLeft <= 5 }">
                     {{ timeLeft }}s
                     <span v-if="isDoubleTime" class="double-time-indicator">{{ t('double_time') }}</span>
+                    <span v-if="showBeepIndicator && soundEnabled" class="beep-indicator">🔊</span>
                 </div>
 
                 <div class="score-section">
@@ -699,7 +789,10 @@
                 invalid_break_turn: "Invalid break - {player} plays with double time",
                 timeout: "Foul by {player} - Time out",
                 match_reset: "Match reset - Waiting for break-off",
-                player_switched: "Switched to {player}'s turn"
+                player_switched: "Switched to {player}'s turn",
+                sound: "Sound",
+                sound_on: "ON",
+                sound_off: "OFF"
             },
             fr: {
                 title: "Gestionnaire de Parties de Billard",
@@ -739,7 +832,10 @@
                 invalid_break_turn: "Casse non valide - {player} joue avec temps double",
                 timeout: "Faute de {player} - Temps écoulé",
                 match_reset: "Match réinitialisé - En attente du coup d'envoi",
-                player_switched: "Changement vers {player}"
+                player_switched: "Changement vers {player}",
+                sound: "Son",
+                sound_on: "ACTIVÉ",
+                sound_off: "DÉSACTIVÉ"
             }
         };
 
@@ -748,6 +844,7 @@
                 return {
                     lang: 'en',
                     translations,
+                    soundEnabled: true,
                     player1: {
                         name: translations.en.player1,
                         matchScore: 0,
@@ -769,7 +866,12 @@
                     extensionTime: 15,
                     timer: null,
                     isDoubleTime: false,
-                    gameStatus: translations.en.waiting_break
+                    gameStatus: translations.en.waiting_break,
+                    showBeepIndicator: false,
+                    beepInterval: null,
+                    audioContext: null,
+                    hasPlayed10sBeep: false, // Pour s'assurer qu'un seul bip à 10s
+                    hasStarted5sBeeps: false // Pour s'assurer qu'on ne démarre qu'une fois les bips à 5s
                 };
             },
             watch: {
@@ -788,9 +890,171 @@
                     ) {
                         this.gameStatus = this.t('waiting_break');
                     }
+                },
+                timeLeft(newTime, oldTime) {
+                    if (!this.isTimerRunning || this.isPaused || this.isBreaking || !this.soundEnabled) return;
+                    
+                    // Logique des bips sonores corrigée
+                    this.handleBeepLogic(newTime, oldTime);
                 }
             },
             methods: {
+                // Initialiser l'audio context
+                initAudio() {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                },
+                
+                // Jouer un bip sonore
+                playBeep(frequency = 800, duration = 0.1) {
+                    if (!this.soundEnabled || !this.audioContext) return;
+                    
+                    try {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        
+                        oscillator.frequency.value = frequency;
+                        oscillator.type = 'sine';
+                        
+                        // Enveloppe ADSR
+                        const now = this.audioContext.currentTime;
+                        gainNode.gain.setValueAtTime(0, now);
+                        gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                        
+                        oscillator.start(now);
+                        oscillator.stop(now + duration);
+                        
+                        // Nettoyer après le bip
+                        setTimeout(() => {
+                            oscillator.disconnect();
+                            gainNode.disconnect();
+                        }, duration * 1000);
+                    } catch (error) {
+                        console.log("Erreur audio:", error);
+                    }
+                },
+                
+                // Gérer la logique des bips CORRIGÉE
+                handleBeepLogic(newTime, oldTime) {
+                    if (!this.isTimerRunning) {
+                        this.stopBeeps();
+                        this.resetBeepFlags();
+                        return;
+                    }
+                    
+                    // CORRECTION 1 : Un seul bip à 10 secondes
+                    if (newTime === 10 && oldTime === 11) {
+                        this.playSingleBeepAt10s();
+                    }
+                    
+                    // CORRECTION 2 : Bips toutes les secondes à partir de 5 secondes
+                    if (newTime === 5 && oldTime === 6) {
+                        this.start5sBeeps();
+                    }
+                    
+                    // Arrêter les bips si > 5 secondes (après le bip unique à 10s)
+                    if (newTime > 5) {
+                        this.stop5sBeeps();
+                    }
+                    
+                    // Arrêter tout à 0
+                    if (newTime === 0) {
+                        this.stopBeeps();
+                        this.playTimeoutBeep();
+                        this.resetBeepFlags();
+                    }
+                    
+                    // Afficher l'indicateur de bip seulement pendant les phases de bip
+                    this.showBeepIndicator = (newTime === 10 || (newTime <= 5 && newTime > 0));
+                },
+                
+                // CORRECTION : Un seul bip à 10 secondes
+                playSingleBeepAt10s() {
+                    if (this.hasPlayed10sBeep) return;
+                    
+                    this.playBeep(800, 0.1);
+                    this.hasPlayed10sBeep = true;
+                    this.showBeepIndicator = true;
+                    
+                    // Cacher l'indicateur après 1 seconde
+                    setTimeout(() => {
+                        this.showBeepIndicator = false;
+                    }, 1000);
+                },
+                
+                // CORRECTION : Démarrer les bips à 5 secondes
+                start5sBeeps() {
+                    if (this.hasStarted5sBeeps) return;
+                    
+                    this.hasStarted5sBeeps = true;
+                    this.showBeepIndicator = true;
+                    
+                    // Premier bip immédiat
+                    this.playBeep(1200, 0.15);
+                    
+                    // Bip toutes les secondes
+                    this.beepInterval = setInterval(() => {
+                        if (this.timeLeft > 0 && this.timeLeft <= 5 && this.isTimerRunning && !this.isPaused) {
+                            this.playBeep(1200, 0.15);
+                        } else {
+                            this.stop5sBeeps();
+                        }
+                    }, 1000);
+                },
+                
+                // Arrêter les bips à 5 secondes
+                stop5sBeeps() {
+                    if (this.beepInterval) {
+                        clearInterval(this.beepInterval);
+                        this.beepInterval = null;
+                    }
+                    this.hasStarted5sBeeps = false;
+                    this.showBeepIndicator = false;
+                },
+                
+                // Arrêter tous les bips
+                stopBeeps() {
+                    this.stop5sBeeps();
+                    this.showBeepIndicator = false;
+                },
+                
+                // Réinitialiser les flags de bip
+                resetBeepFlags() {
+                    this.hasPlayed10sBeep = false;
+                    this.hasStarted5sBeeps = false;
+                    this.showBeepIndicator = false;
+                },
+                
+                // Jouer le bip de timeout
+                playTimeoutBeep() {
+                    if (!this.soundEnabled) return;
+                    
+                    this.playBeep(400, 0.5);
+                    setTimeout(() => {
+                        if (this.soundEnabled) this.playBeep(300, 0.5);
+                    }, 300);
+                },
+                
+                // Activer/désactiver le son
+                toggleSound() {
+                    this.soundEnabled = !this.soundEnabled;
+                    if (!this.soundEnabled) {
+                        this.stopBeeps();
+                        this.resetBeepFlags();
+                    } else if (this.timeLeft <= 5 && this.isTimerRunning && !this.isPaused) {
+                        // Redémarrer les bips à 5s si le timer est dans cette phase
+                        this.start5sBeeps();
+                    } else if (this.timeLeft === 10 && this.isTimerRunning && !this.isPaused && !this.hasPlayed10sBeep) {
+                        // Jouer le bip à 10s si pas déjà joué
+                        this.playSingleBeepAt10s();
+                    }
+                },
+                
                 t(key, vars = {}) {
                     let str = this.translations[this.lang][key] || key;
                     Object.keys(vars).forEach(k => {
@@ -801,6 +1065,15 @@
                 
                 startTimer() {
                     if (this.isBreaking) return;
+                    
+                    // Réinitialiser les flags de bip
+                    this.resetBeepFlags();
+                    
+                    // Initialiser l'audio si nécessaire
+                    if (this.soundEnabled && !this.audioContext) {
+                        this.initAudio();
+                    }
+                    
                     this.isTimerRunning = true;
                     this.isPaused = false;
                     this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
@@ -818,6 +1091,7 @@
                     this.isPaused = true;
                     this.isTimerRunning = false;
                     clearInterval(this.timer);
+                    this.stopBeeps();
                     this.gameStatus = this.t('paused');
                 },
                 
@@ -833,10 +1107,21 @@
                             this.handleTimeout();
                         }
                     }, 1000);
+                    
+                    // Vérifier si on doit redémarrer les bips
+                    if (this.soundEnabled) {
+                        if (this.timeLeft <= 5 && this.timeLeft > 0) {
+                            this.start5sBeeps();
+                        } else if (this.timeLeft === 10 && !this.hasPlayed10sBeep) {
+                            this.playSingleBeepAt10s();
+                        }
+                    }
                 },
                 
                 stopTimer() {
                     clearInterval(this.timer);
+                    this.stopBeeps();
+                    this.resetBeepFlags();
                     this.isTimerRunning = false;
                     this.isPaused = false;
                     this.timeLeft = this.timePerShot;
@@ -847,11 +1132,13 @@
                 handleTimeout() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
+                    this.stopBeeps();
                     this.gameStatus = this.t('timeout', { player: this.getCurrentPlayer().name });
                     setTimeout(() => {
                         this.switchPlayer();
                         this.timeLeft = this.timePerShot;
                         this.isDoubleTime = false;
+                        this.resetBeepFlags();
                     }, 2000);
                 },
                 
@@ -859,29 +1146,25 @@
                     this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
                     this.timeLeft = this.timePerShot;
                     this.isDoubleTime = false;
+                    this.stopBeeps();
+                    this.resetBeepFlags();
                     this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
                 },
                 
-                // NOUVELLE MÉTHODE : Switch depuis les cartes
                 switchFromCard(fromPlayer) {
                     if (this.isBreaking) return;
                     
-                    // Arrêter le timer du joueur actuel
                     clearInterval(this.timer);
+                    this.stopBeeps();
+                    this.resetBeepFlags();
                     this.isTimerRunning = false;
                     this.isPaused = false;
                     
-                    // Changer de joueur
                     this.currentPlayer = fromPlayer === 1 ? 2 : 1;
-                    
-                    // Réinitialiser le timer pour le nouveau joueur
                     this.timeLeft = this.timePerShot;
                     this.isDoubleTime = false;
                     
-                    // Démarrer automatiquement le timer du nouveau joueur
                     this.startTimer();
-                    
-                    // Message de confirmation
                     this.gameStatus = this.t('player_switched', { player: this.getCurrentPlayer().name });
                 },
                 
@@ -905,7 +1188,23 @@
                         return;
                     }
                     if (player === this.currentPlayer && this.isTimerRunning) {
+                        // Ajouter le temps d'extension
+                        const oldTime = this.timeLeft;
                         this.timeLeft += this.extensionTime;
+                        
+                        // CORRECTION : Réinitialiser les flags de bip
+                        this.resetBeepFlags();
+                        this.stopBeeps();
+                        
+                        // CORRECTION : Si le nouveau temps est <= 10, jouer le bip à 10s si nécessaire
+                        if (this.timeLeft <= 10 && this.soundEnabled && this.timeLeft > 5) {
+                            this.playSingleBeepAt10s();
+                        }
+                        // Si le nouveau temps est <= 5, démarrer les bips à 5s
+                        else if (this.timeLeft <= 5 && this.soundEnabled) {
+                            this.start5sBeeps();
+                        }
+                        
                         if (player === 1) {
                             this.player1.hasExtension = false;
                         } else {
@@ -931,6 +1230,8 @@
                 
                 newGame() {
                     clearInterval(this.timer);
+                    this.stopBeeps();
+                    this.resetBeepFlags();
                     this.currentGame++;
                     this.breakingPlayer = this.breakingPlayer === 1 ? 2 : 1;
                     this.currentPlayer = this.breakingPlayer;
@@ -947,6 +1248,8 @@
                 resetMatch() {
                     if (confirm(this.t('reset_match') + ' ?')) {
                         clearInterval(this.timer);
+                        this.stopBeeps();
+                        this.resetBeepFlags();
                         this.player1.matchScore = 0;
                         this.player2.matchScore = 0;
                         this.currentGame = 1;
@@ -969,6 +1272,8 @@
                 
                 manualSwitchPlayer() {
                     clearInterval(this.timer);
+                    this.stopBeeps();
+                    this.resetBeepFlags();
                     this.isTimerRunning = false;
                     this.isPaused = false;
                     this.switchPlayer();
@@ -977,9 +1282,25 @@
                 }
             },
             
+            mounted() {
+                // Initialiser l'audio context au chargement de la page
+                if (typeof window !== 'undefined') {
+                    // Démarrer l'audio context au premier clic utilisateur
+                    document.addEventListener('click', () => {
+                        if (this.soundEnabled && !this.audioContext) {
+                            this.initAudio();
+                        }
+                    }, { once: true });
+                }
+            },
+            
             beforeUnmount() {
                 if (this.timer) {
                     clearInterval(this.timer);
+                }
+                this.stopBeeps();
+                if (this.audioContext) {
+                    this.audioContext.close();
                 }
             }
         }).mount('#app');
