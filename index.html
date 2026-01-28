@@ -103,6 +103,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
             order: 1;
+            position: relative;
         }
 
         @media (min-width: 768px) {
@@ -241,6 +242,10 @@
             transform: scale(0.95);
         }
 
+        .extension-section {
+            margin: 15px 0;
+        }
+
         .extension-btn {
             width: 100%;
             padding: clamp(10px, 2.5vw, 12px);
@@ -253,6 +258,37 @@
             cursor: pointer;
             transition: all 0.3s ease;
             touch-action: manipulation;
+        }
+
+        /* SWITCH PLAYER BUTTON ON CARDS */
+        .switch-player-btn {
+            width: 100%;
+            padding: clamp(10px, 2.5vw, 12px);
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .switch-player-btn:hover:not(:disabled) {
+            background: #f57c00;
+            transform: translateY(-2px);
+        }
+
+        .switch-player-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         /* CONTROLS CENTER - MOBILE FRIENDLY */
@@ -518,6 +554,12 @@
                         {{ t('extension_already_used') }}
                     </div>
                 </div>
+
+                <!-- Bouton Switch Player pour Player 1 -->
+                <button class="switch-player-btn" @click="switchFromCard(1)" 
+                        :disabled="currentPlayer !== 1 || isBreaking">
+                    🔄 {{ t('switch_to_player', { player: player2.name }) }}
+                </button>
             </div>
 
             <!-- Controls Center -->
@@ -605,12 +647,17 @@
                         {{ t('extension_already_used') }}
                     </div>
                 </div>
+
+                <!-- Bouton Switch Player pour Player 2 -->
+                <button class="switch-player-btn" @click="switchFromCard(2)" 
+                        :disabled="currentPlayer !== 2 || isBreaking">
+                    🔄 {{ t('switch_to_player', { player: player1.name }) }}
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Le script Vue.js reste exactement le même que dans ta version originale
         const { createApp } = Vue;
 
         const translations = {
@@ -639,6 +686,7 @@
                 resume: "Resume",
                 stop_reset: "Stop (Reset Timer)",
                 switch_player: "Switch Player",
+                switch_to_player: "Switch to {player}",
                 new_game: "New Game",
                 reset_match: "Reset Match",
                 waiting_break: "Waiting for break-off",
@@ -650,7 +698,8 @@
                 double_time_turn: "{player} continues with double time",
                 invalid_break_turn: "Invalid break - {player} plays with double time",
                 timeout: "Foul by {player} - Time out",
-                match_reset: "Match reset - Waiting for break-off"
+                match_reset: "Match reset - Waiting for break-off",
+                player_switched: "Switched to {player}'s turn"
             },
             fr: {
                 title: "Gestionnaire de Parties de Billard",
@@ -677,6 +726,7 @@
                 resume: "Reprendre",
                 stop_reset: "Stop (Reset Timer)",
                 switch_player: "Changer de joueur",
+                switch_to_player: "Changer vers {player}",
                 new_game: "Nouvelle Partie",
                 reset_match: "Réinitialiser Match",
                 waiting_break: "En attente du coup d'envoi",
@@ -688,7 +738,8 @@
                 double_time_turn: "{player} continue avec temps double",
                 invalid_break_turn: "Casse non valide - {player} joue avec temps double",
                 timeout: "Faute de {player} - Temps écoulé",
-                match_reset: "Match réinitialisé - En attente du coup d'envoi"
+                match_reset: "Match réinitialisé - En attente du coup d'envoi",
+                player_switched: "Changement vers {player}"
             }
         };
 
@@ -747,6 +798,7 @@
                     });
                     return str;
                 },
+                
                 startTimer() {
                     if (this.isBreaking) return;
                     this.isTimerRunning = true;
@@ -760,6 +812,7 @@
                         }
                     }, 1000);
                 },
+                
                 pauseTimer() {
                     if (!this.isTimerRunning) return;
                     this.isPaused = true;
@@ -767,6 +820,7 @@
                     clearInterval(this.timer);
                     this.gameStatus = this.t('paused');
                 },
+                
                 resumeTimer() {
                     if (!this.isPaused) return;
                     this.isPaused = false;
@@ -780,6 +834,7 @@
                         }
                     }, 1000);
                 },
+                
                 stopTimer() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
@@ -788,6 +843,7 @@
                     this.isDoubleTime = false;
                     this.gameStatus = this.t('timer_reset');
                 },
+                
                 handleTimeout() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
@@ -798,12 +854,37 @@
                         this.isDoubleTime = false;
                     }, 2000);
                 },
+                
                 switchPlayer() {
                     this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
                     this.timeLeft = this.timePerShot;
                     this.isDoubleTime = false;
                     this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
                 },
+                
+                // NOUVELLE MÉTHODE : Switch depuis les cartes
+                switchFromCard(fromPlayer) {
+                    if (this.isBreaking) return;
+                    
+                    // Arrêter le timer du joueur actuel
+                    clearInterval(this.timer);
+                    this.isTimerRunning = false;
+                    this.isPaused = false;
+                    
+                    // Changer de joueur
+                    this.currentPlayer = fromPlayer === 1 ? 2 : 1;
+                    
+                    // Réinitialiser le timer pour le nouveau joueur
+                    this.timeLeft = this.timePerShot;
+                    this.isDoubleTime = false;
+                    
+                    // Démarrer automatiquement le timer du nouveau joueur
+                    this.startTimer();
+                    
+                    // Message de confirmation
+                    this.gameStatus = this.t('player_switched', { player: this.getCurrentPlayer().name });
+                },
+                
                 validateBreak(isValid) {
                     this.isBreaking = false;
                     if (isValid) {
@@ -817,6 +898,7 @@
                         this.gameStatus = this.t('invalid_break_turn', { player: this.getCurrentPlayer().name });
                     }
                 },
+                
                 useExtension(player) {
                     if ((player === 1 && !this.player1.hasExtension) || 
                         (player === 2 && !this.player2.hasExtension)) {
@@ -832,6 +914,7 @@
                         this.gameStatus = this.t('extension_used_by', { player: this.getCurrentPlayer().name });
                     }
                 },
+                
                 adjustScore(player, value) {
                     if (player === 1) {
                         this.player1.matchScore = Math.max(0, this.player1.matchScore + value);
@@ -845,6 +928,7 @@
                         }, 2000);
                     }
                 },
+                
                 newGame() {
                     clearInterval(this.timer);
                     this.currentGame++;
@@ -859,6 +943,7 @@
                     this.player2.hasExtension = true;
                     this.gameStatus = this.t('game') + ' ' + this.currentGame + ' - ' + this.getCurrentPlayer().name + ' ' + this.t('break').toLowerCase();
                 },
+                
                 resetMatch() {
                     if (confirm(this.t('reset_match') + ' ?')) {
                         clearInterval(this.timer);
@@ -877,9 +962,11 @@
                         this.gameStatus = this.t('match_reset');
                     }
                 },
+                
                 getCurrentPlayer() {
                     return this.currentPlayer === 1 ? this.player1 : this.player2;
                 },
+                
                 manualSwitchPlayer() {
                     clearInterval(this.timer);
                     this.isTimerRunning = false;
@@ -889,6 +976,7 @@
                     this.gameStatus = this.t('turn', { player: this.getCurrentPlayer().name });
                 }
             },
+            
             beforeUnmount() {
                 if (this.timer) {
                     clearInterval(this.timer);
